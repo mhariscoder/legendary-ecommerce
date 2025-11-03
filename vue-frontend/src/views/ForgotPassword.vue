@@ -15,35 +15,23 @@
           <div class="row justify-content-center g-0">
             <div class="col-lg-9 col-xl-8 col-xxl-6">
               <div class="card shadow-sm">
-                <div class="card-header bg-primary text-center p-2">
-                  <router-link
-                    class="font-sans-serif fw-bolder fs-5 text-white text-decoration-none"
-                    to="/"
-                  >
-                    falcon
-                  </router-link>
-                </div>
 
                 <div class="card-body p-4 text-center">
                   <h4 class="mb-1">Forgot your password?</h4>
                   <small>Enter your email and we’ll send you a reset link.</small>
 
                   <form class="mt-4" @submit.prevent="onSubmit">
-                    <div class="mb-3">
-                      <input
-                        type="email"
-                        class="form-control"
-                        placeholder="Email address"
-                        v-model="email"
-                        @blur="emailBlur"
-                      />
-                      <small v-if="emailError && emailMeta.touched" class="text-danger">
-                        {{ emailError }}
-                      </small>
-                    </div>
+                    <FormInput
+                      id="email"
+                      label="Email address"
+                      type="email"
+                      v-model="form.email"
+                      :error="errors.email"
+                    />
 
-                    <button class="btn btn-primary d-block w-100 mt-3" type="submit">
-                      Send reset link
+                    <button class="btn btn-primary d-block w-100 mt-3" type="submit" :disabled="loading">
+                      <span v-if="loading" class="spinner-border spinner-border-sm me-2"></span>
+                      {{ loading ? 'Sending...' : 'Send reset link' }}
                     </button>
                   </form>
 
@@ -54,51 +42,59 @@
               </div>
             </div>
           </div>
-        </div> <!-- /right column -->
+        </div>
       </div>
     </div>
   </main>
 </template>
 
-<script setup>
-    import { useForm, useField } from 'vee-validate'
-    import * as yup from 'yup'
-    import { useMainStore } from '@/store'
+<script setup lang="ts">
+import { reactive, ref } from 'vue'
+import * as yup from 'yup'
+import FormInput from '@/components/common/FormInput.vue'
+import { useMainStore } from '@/store'
+import { validate } from '@/utils/validate'
 
-    // ✅ Background image (Vite-compatible)
-    const bgImage = new URL('@/assets/img/generic/17.jpg', import.meta.url).href
+const bgImage = new URL('@/assets/img/generic/17.jpg', import.meta.url).href
+const store = useMainStore()
+const loading = ref(false)
 
-    // ✅ Store
-    const store = useMainStore()
+const form = reactive({
+  email: '',
+})
 
-    // ✅ Validation schema
-    const schema = yup.object({
-    email: yup.string().email('Invalid email').required('Email is required'),
-    })
+const errors = reactive<{ email?: string }>({})
 
-    // ✅ Form setup
-    const { handleSubmit } = useForm({ validationSchema: schema })
-    const {
-    value: email,
-    errorMessage: emailError,
-    handleBlur: emailBlur,
-    meta: emailMeta,
-    } = useField('email')
+const schema = yup.object({
+  email: yup.string().email('Invalid email').required('Email is required'),
+})
 
-    // ✅ Submit handler
-    const onSubmit = handleSubmit(async (values) => {
-    await store.forgotPassword(values.email)
-    })
+const onSubmit = async () => {
+  const { valid, fieldErrors } = await validate(schema, form)
+  Object.assign(errors, fieldErrors)
+
+  if (!valid) return
+
+  loading.value = true
+  try {
+    await store.forgotPassword(form.email)
+    alert('✅ Password reset link sent to your email!')
+  } catch (err: any) {
+    alert(err.message || 'Something went wrong')
+  } finally {
+    loading.value = false
+  }
+}
 </script>
 
 <style scoped>
-    .bg-holder {
-    width: 100%;
-    height: 100%;
-    background-size: cover;
-    background-repeat: no-repeat;
-    }
-    .overlay {
-    position: relative;
-    }
+.bg-holder {
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+.overlay {
+  position: relative;
+}
 </style>

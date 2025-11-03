@@ -6,23 +6,15 @@
         <div class="col-6 d-none d-lg-block position-relative">
           <div
             class="bg-holder"
-            :style="{ backgroundImage: `url(${bgImage})`, backgroundPosition: '50% 20%', backgroundSize: 'cover' }"
+            :style="{ backgroundImage: `url(${bgImage})` }"
           ></div>
         </div>
 
-        <!-- RIGHT SIDE REGISTER FORM -->
-        <div class="col-sm-10 col-md-6 px-sm-0 align-self-center mx-auto py-5">
+        <!-- RIGHT SIDE -->
+        <div class="col-sm-10 col-md-6 align-self-center mx-auto py-5">
           <div class="row justify-content-center g-0">
             <div class="col-lg-9 col-xl-8 col-xxl-6">
               <div class="card shadow-sm">
-                <div class="card-header bg-primary text-center p-2">
-                  <router-link
-                    class="font-sans-serif fw-bolder fs-5 text-white text-decoration-none"
-                    to="/"
-                  >
-                    falcon
-                  </router-link>
-                </div>
 
                 <div class="card-body p-4">
                   <div class="row flex-between-center mb-3">
@@ -35,185 +27,95 @@
                     </div>
                   </div>
 
-                  <!-- ✅ REGISTER FORM -->
                   <form @submit.prevent="onSubmit">
-                    <div class="mb-3">
-                      <label class="form-label" for="name">Name</label>
-                      <input
-                        id="name"
-                        v-model="name"
-                        type="text"
-                        class="form-control"
-                        @blur="nameBlur"
-                      />
-                      <small v-if="nameError && nameMeta.touched" class="text-danger">
-                        {{ nameError }}
-                      </small>
-                    </div>
-
-                    <div class="mb-3">
-                      <label class="form-label" for="email">Email address</label>
-                      <input
-                        id="email"
-                        v-model="email"
-                        type="email"
-                        class="form-control"
-                        @blur="emailBlur"
-                      />
-                      <small v-if="emailError && emailMeta.touched" class="text-danger">
-                        {{ emailError }}
-                      </small>
-                    </div>
-
-                    <div class="row gx-2">
-                      <div class="mb-3 col-sm-6">
-                        <label class="form-label" for="password">Password</label>
-                        <input
-                          id="password"
-                          v-model="password"
-                          type="password"
-                          class="form-control"
-                          @blur="passwordBlur"
-                        />
-                        <small v-if="passwordError && passwordMeta.touched" class="text-danger">
-                          {{ passwordError }}
-                        </small>
-                      </div>
-                      <div class="mb-3 col-sm-6">
-                        <label class="form-label" for="confirmPassword">Confirm Password</label>
-                        <input
-                          id="confirmPassword"
-                          v-model="confirmPassword"
-                          type="password"
-                          class="form-control"
-                          @blur="confirmPasswordBlur"
-                        />
-                        <small
-                          v-if="confirmPasswordError && confirmPasswordMeta.touched"
-                          class="text-danger"
-                        >
-                          {{ confirmPasswordError }}
-                        </small>
-                      </div>
-                    </div>
+                    <FormInput id="name" label="Name" v-model="form.name" :error="errors.name" />
+                    <FormInput id="email" label="Email" type="email" v-model="form.email" :error="errors.email" />
+                    <FormInput id="password" label="Password" type="password" v-model="form.password" :error="errors.password" />
+                    <FormInput id="password_confirmation" label="Confirm Password" type="password" v-model="form.password_confirmation" :error="errors.password_confirmation" />
 
                     <div class="form-check mb-3">
-                      <input
-                        class="form-check-input"
-                        type="checkbox"
-                        id="agree"
-                        v-model="agree"
-                      />
-                      <label class="form-check-label" for="agree">
-                        I accept the
-                        <a href="#!">terms</a> and
-                        <a href="#!">privacy policy</a>
-                      </label>
-                      <small v-if="agreeError" class="text-danger d-block">{{ agreeError }}</small>
+                      <input class="form-check-input" type="checkbox" id="agree" v-model="agree" />
+                      <label class="form-check-label" for="agree"> 
+                        I agree to the terms and privacy policy
+                      </label><br/>
+                      <small v-if="agreeError" class="text-danger">{{ agreeError }}</small>
                     </div>
 
-                    <button class="btn btn-primary d-block w-100 mt-3" type="submit">
-                      Register
+                    <button class="btn btn-primary w-100 mt-3" type="submit" :disabled="loading">
+                      <span v-if="loading" class="spinner-border spinner-border-sm me-2"></span>
+                      {{ loading ? 'Registering...' : 'Register' }}
                     </button>
                   </form>
-
-                  <div class="position-relative mt-4">
-                    <hr />
-                    <div class="divider-content-center text-muted small">
-                      or register with
-                    </div>
-                  </div>
-
-                  <div class="row g-2 mt-2">
-                    <div class="col-sm-6">
-                      <a
-                        class="btn btn-outline-google-plus btn-sm d-block w-100"
-                        href="#"
-                      >
-                        <span
-                          class="fab fa-google-plus-g me-2"
-                          data-fa-transform="grow-8"
-                        ></span>
-                        Google
-                      </a>
-                    </div>
-                    <div class="col-sm-6">
-                      <a
-                        class="btn btn-outline-facebook btn-sm d-block w-100"
-                        href="#"
-                      >
-                        <span
-                          class="fab fa-facebook-square me-2"
-                          data-fa-transform="grow-8"
-                        ></span>
-                        Facebook
-                      </a>
-                    </div>
-                  </div>
-                </div> <!-- /card-body -->
-              </div> <!-- /card -->
+                </div>
+              </div>
             </div>
           </div>
-        </div> <!-- /right column -->
+        </div>
       </div>
     </div>
   </main>
 </template>
 
-<script setup>
-    import { ref } from 'vue'
-    import { useForm, useField } from 'vee-validate'
-    import * as yup from 'yup'
-    import { useMainStore } from '@/store'
+<script setup lang="ts">
+import { reactive, ref } from 'vue'
+import * as yup from 'yup'
+import FormInput from '@/components/common/FormInput.vue'
+import { useMainStore } from '@/store'
+import { validate } from '@/utils/validate'
+import type { RegisterForm } from '@/types/auth'
 
-    // ✅ Image path (Vite compatible)
-    const bgImage = new URL('@/assets/img/generic/19.jpg', import.meta.url).href
+const bgImage = new URL('@/assets/img/generic/19.jpg', import.meta.url).href
+const store = useMainStore()
+const loading = ref(false)
 
-    // ✅ Store
-    const store = useMainStore()
+const form = reactive<RegisterForm>({
+  name: '',
+  email: '',
+  password: '',
+  password_confirmation: '',
+})
 
-    // ✅ Validation Schema
-    const schema = yup.object({
-    name: yup.string().required('Name is required'),
-    email: yup.string().email('Invalid email').required('Email is required'),
-    password: yup.string().min(6, 'Password must be at least 6 characters').required('Password is required'),
-    confirmPassword: yup
-        .string()
-        .oneOf([yup.ref('password')], 'Passwords must match')
-        .required('Confirm your password'),
-    })
+const errors = reactive<Partial<Record<keyof RegisterForm, string>>>({})
+const agree = ref(false)
+const agreeError = ref('')
 
-    // ✅ Form setup
-    const { handleSubmit } = useForm({ validationSchema: schema })
+const schema = yup.object({
+  name: yup.string().required('Name is required'),
+  email: yup.string().email('Invalid email').required('Email is required'),
+  password: yup.string().min(6, 'Password must be at least 6 characters').required('Password is required'),
+  password_confirmation: yup
+    .string()
+    .required('Confirm Password is required')
+    .oneOf([yup.ref('password')], 'Passwords must match'),
+})
 
-    // ✅ Fields
-    const { value: name, errorMessage: nameError, handleBlur: nameBlur, meta: nameMeta } = useField('name')
-    const { value: email, errorMessage: emailError, handleBlur: emailBlur, meta: emailMeta } = useField('email')
-    const { value: password, errorMessage: passwordError, handleBlur: passwordBlur, meta: passwordMeta } = useField('password')
-    const { value: confirmPassword, errorMessage: confirmPasswordError, handleBlur: confirmPasswordBlur, meta: confirmPasswordMeta } = useField('confirmPassword')
+const onSubmit = async () => {
+  const { valid, fieldErrors } = await validate(schema, form)
+  Object.assign(errors, fieldErrors)
 
-    // ✅ Checkbox
-    const agree = ref(false)
-    const agreeError = ref('')
+  if (!valid) return
+  if (!agree.value) {
+    agreeError.value = 'Please accept the terms.'
+    return
+  }
 
-    // ✅ Submit
-    const onSubmit = handleSubmit(async (values) => {
-        if (!agree.value) {
-            agreeError.value = 'You must accept the terms and privacy policy.'
-            return
-        } else {
-            agreeError.value = ''
-        }
-
-        await store.register(values)
-    })
+  loading.value = true
+  agreeError.value = ''
+  try {
+    await store.register(form)
+    alert('✅ Registered successfully!')
+  } catch (err: any) {
+    alert(err.message)
+  } finally {
+    loading.value = false
+  }
+}
 </script>
 
 <style scoped>
-    .bg-holder {
-        width: 100%;
-        height: 100%;
-        background-size: cover;
-        background-repeat: no-repeat;
-    }
+.bg-holder {
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+}
 </style>
