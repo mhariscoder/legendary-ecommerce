@@ -7,6 +7,7 @@ import Register from '@/views/Register.vue'
 import ForgotPassword from '@/views/ForgotPassword.vue'
 import Dashboard from '@/views/Dashboard.vue'
 import Product from '@/views/Product.vue'
+import ProductAttribute from '@/views/ProductAttribute.vue'
 import NotFound from '@/views/NotFound.vue'
 
 // Middlewares
@@ -47,6 +48,15 @@ const routes = [
     component: Product,
     meta: { middleware: [auth] },
   },
+
+  {
+    path: '/product-attribute',
+    name: 'Product Attribute',
+    component: ProductAttribute,
+    meta: { middleware: [auth] },
+  },
+
+  
 
   { path: '/:pathMatch(.*)*', name: 'NotFound', component: NotFound },
 ]
