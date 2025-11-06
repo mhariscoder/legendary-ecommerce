@@ -7,9 +7,22 @@ use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return Product::with('variations')->get();
+        // Use pagination (default 10 per page)
+        $perPage = $request->query('per_page', 10);
+
+        // Include variations if needed
+        $products = Product::with('variations')->paginate($perPage);
+
+        // Return pagination response
+        return response()->json([
+            'data' => $products->items(),
+            'current_page' => $products->currentPage(),
+            'last_page' => $products->lastPage(),
+            'per_page' => $products->perPage(),
+            'total' => $products->total(),
+        ]);
     }
 
     public function store(Request $request)
@@ -39,7 +52,7 @@ class ProductController extends Controller
             'description' => 'nullable|string',
             'price' => 'sometimes|required|numeric',
             'stock' => 'sometimes|required|integer',
-            'sku' => 'sometimes|required|string|unique:products,sku',
+            'sku' => 'sometimes|required|string|unique:products,sku,' . $product->id,
         ]);
 
         $product->update($validated);

@@ -4,7 +4,9 @@
             <Sidebar />
 
             <div class="content">
-              <Topbar /> <slot />
+              <Topbar /> 
+              
+              <slot />
             </div>
         </div>
     </main>

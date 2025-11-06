@@ -9,15 +9,29 @@ class Product extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'description', 'price', 'stock', 'sku'];
+    protected $fillable = [
+        'name',
+        'description',
+        'price',
+        'stock',
+        'sku',
+    ];
 
+    /**
+     * A product can belong to many orders.
+     */
+    public function orders()
+    {
+        return $this->belongsToMany(Order::class, 'order_product')
+                    ->withPivot('quantity', 'price')
+                    ->withTimestamps();
+    }
+
+    /**
+     * A product can have many variations.
+     */
     public function variations()
     {
         return $this->hasMany(ProductVariation::class);
-    }
-
-    public function attributes()
-    {
-        return $this->belongsToMany(ProductAttribute::class, 'product_variation_attributes', 'product_variation_id', 'attribute_variation_id');
     }
 }

@@ -1,26 +1,45 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
+namespace App\Models;
 
-class CreateOrdersTable extends Migration
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class Order extends Model
 {
-    public function up()
+    use HasFactory;
+
+    protected $fillable = [
+        'customer_id',
+        'total_price',
+        'status',
+        'shipping_address',
+        'payment_method',
+    ];
+
+    /**
+     * An order belongs to a customer.
+     */
+    public function customer()
     {
-        Schema::create('orders', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('customer_id')->constrained()->onDelete('cascade');
-            $table->decimal('total_price', 10, 2);
-            $table->string('status')->default('pending');
-            $table->text('shipping_address');
-            $table->string('payment_method')->nullable();
-            $table->timestamps();
-        });
+        return $this->belongsTo(Customer::class);
     }
 
-    public function down()
+    /**
+     * An order can have many products (many-to-many).
+     */
+    public function products()
     {
-        Schema::dropIfExists('orders');
+        return $this->belongsToMany(Product::class, 'order_product')
+                    ->withPivot('quantity', 'price')
+                    ->withTimestamps();
+    }
+
+    /**
+     * An order can have one invoice.
+     */
+    public function invoice()
+    {
+        return $this->hasOne(Invoice::class);
     }
 }

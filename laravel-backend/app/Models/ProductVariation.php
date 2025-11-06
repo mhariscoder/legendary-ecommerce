@@ -9,15 +9,32 @@ class ProductVariation extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['product_id', 'price', 'stock'];
+    protected $table = 'product_variations';
 
+    protected $fillable = [
+        'product_id',
+        'price',
+        'stock',
+    ];
+
+    /**
+     * Each variation belongs to a product.
+     */
     public function product()
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(Product::class, 'product_id');
     }
 
-    public function attributeVariations()
+    /**
+     * A variation can have many attribute values (via product_variation_attributes).
+     */
+    public function attributes()
     {
-        return $this->belongsToMany(AttributeVariation::class, 'product_variation_attributes', 'product_variation_id', 'attribute_variation_id');
+        return $this->belongsToMany(
+            ProductAttributeValue::class,
+            'product_variation_attributes',
+            'product_variation_id',
+            'product_attribute_value_id'
+        )->withTimestamps();
     }
 }

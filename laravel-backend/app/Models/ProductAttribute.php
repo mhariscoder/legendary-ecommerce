@@ -9,15 +9,15 @@ class ProductAttribute extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name'];
+    protected $fillable = [
+        'name',
+    ];
 
-    public function variations()
+    /**
+     * An attribute can have many values.
+     */
+    public function values()
     {
-        return $this->hasMany(AttributeVariation::class);
-    }
-
-    public function products()
-    {
-        return $this->belongsToMany(Product::class, 'product_variation_attributes', 'attribute_variation_id', 'product_variation_id');
+        return $this->hasMany(ProductAttributeValue::class);
     }
 }

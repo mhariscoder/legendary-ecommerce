@@ -1,26 +1,26 @@
 <?php
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 
-class CreateCustomersTable extends Migration
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class Customer extends Model
 {
-    public function up()
-    {
-        Schema::create('customers', function (Blueprint $table) {
-            $table->id(); // Primary key
-            $table->string('name'); // Full name of the customer
-            $table->string('email')->unique(); // Email address
-            $table->string('phone'); // Customer's phone number
-            $table->text('shipping_address'); // Shipping address of the customer
-            $table->text('billing_address')->nullable(); // Billing address (optional)
-            $table->string('status')->default('active'); // Customer status (active, inactive, etc.)
-            $table->timestamps(); // Created at & updated at timestamps
-        });
-    }
+    use HasFactory;
 
-    public function down()
+    protected $fillable = [
+        'name',
+        'email',
+        'phone',
+        'shipping_address',
+    ];
+
+    /**
+     * A customer can have many orders.
+     */
+    public function orders()
     {
-        Schema::dropIfExists('customers');
+        return $this->hasMany(Order::class);
     }
 }
