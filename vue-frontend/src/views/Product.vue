@@ -14,37 +14,34 @@
           </div>
 
           <div class="card-body py-0 border-top">
-            <div class="card shadow-none">
-              <div class="card-body p-0 pb-3">
-                <TableComponent
-                  v-if="productStore.products.length"
-                  :columns="columns"
-                  :data="productStore.products"
-                  :pagination="productStore.pagination"
-                  :loading="productStore.loading"
-                  :error="productStore.error"
-                  @page-change="handlePageChange"
-                  @create="openCreateModal"
-                  @bulk="handleBulk"
-                  @row-click="openEditModal"
-                />
+            <TableComponent
+                v-if="productStore.products.length"
+                :columns="columns"
+                :data="productStore.products"
+                :pagination="productStore.pagination"
+                :loading="productStore.loading"
+                :error="productStore.error"
+                @page-change="handlePageChange"
+                @create="openCreateModal"
+                @edit="openEditModal"
+                @remove="openDeleteModal"
+                @bulk="handleBulk"
+            />
 
-                <div v-else-if="productStore.loading" class="text-center py-5 text-muted">
-                  <div class="spinner-border text-primary" role="status"></div>
-                  <div class="mt-2">Loading products...</div>
-                </div>
+            <div v-else-if="productStore.loading" class="text-center py-5 text-muted">
+              <div class="spinner-border text-primary" role="status"></div>
+              <div class="mt-2">Loading products...</div>
+            </div>
 
-                <div v-else class="text-center py-5 text-muted">
-                  No products found.
-                </div>
-              </div>
+            <div v-else class="text-center py-5 text-muted">
+              No products found.
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- ✅ Product Modal -->
+    <!-- Product Create/Update Modal -->
     <div
       class="modal fade"
       id="productModal"
@@ -91,46 +88,10 @@
                   <textarea v-model="form.description" class="form-control" rows="3"></textarea>
                 </div>
 
-                <!-- ✅ Live Image Upload -->
+                <!-- Product Images Upload -->
                 <div class="col-12 mb-4">
-                  <h6 class="border-bottom pb-2">Product Images</h6>
-                  <vue-multi-image-upload
-                    @data-image="onImagesSelected"
-                    :max="5"
-                    :image-size="5e6"
-                    :accept="['image/jpeg','image/png']"
-                    :preview="{ h: 120, w: 120 }"
-                    :resize="{ h: 800, w: 800, keepRatio: true }"
-                  />
-                  <small class="text-muted">You can upload up to 5 images (JPEG/PNG only).</small>
-                </div>
-
-                <!-- Attributes -->
-                <div class="col-12 mb-3">
-                  <h6 class="border-bottom pb-2">Attributes</h6>
-                  <div v-if="attributes.length">
-                    <div
-                      v-for="attr in attributes"
-                      :key="attr.id"
-                      class="mb-3 border p-3 rounded"
-                    >
-                      <label class="form-label fw-semibold">{{ attr.name }}</label>
-                      <select
-                        multiple
-                        class="form-select"
-                        v-model="form.selectedAttributes[attr.id]"
-                      >
-                        <option
-                          v-for="value in attr.values"
-                          :key="value.id"
-                          :value="value.id"
-                        >
-                          {{ value.value }}
-                        </option>
-                      </select>
-                    </div>
-                  </div>
-                  <div v-else class="text-muted">No attributes available.</div>
+                    <h6>Product Images</h6>
+                    <images-dragger @getImages="handleMainImages" />
                 </div>
 
                 <!-- Variations -->
@@ -152,47 +113,66 @@
                       :key="idx"
                       class="border rounded p-3 mb-3"
                     >
-                      <div class="row align-items-end">
-                        <div class="col-md-4">
-                          <label class="form-label">Price</label>
-                          <input
-                            v-model="variation.price"
-                            type="number"
-                            class="form-control"
-                            required
-                          />
-                        </div>
+                      <div class="row d-flex">
+                        <div class="col-md-6">
+                          <div class="form-group mb-3">
+                            <input
+                              v-model="variation.price"
+                              type="number"
+                              class="form-control"
+                              required
+                              placeholder="Price"
+                            />
+                          </div>
 
-                        <div class="col-md-4">
-                          <label class="form-label">Stock</label>
-                          <input
-                            v-model="variation.stock"
-                            type="number"
-                            class="form-control"
-                            required
-                          />
-                        </div>
+                          <div class="form-group mb-3">
+                            <input
+                              v-model="variation.stock"
+                              type="number"
+                              class="form-control"
+                              required
+                              placeholder="Stock"
+                            />
+                          </div>
 
-                        <div class="col-md-3">
-                          <label class="form-label">Attributes</label>
-                          <select
-                            multiple
+                          <div class="form-group mb-3">
+                            <select
                             class="form-select"
                             v-model="variation.attribute_values"
-                          >
-                            <option
-                              v-for="attrValue in allAttributeValues"
-                              :key="attrValue.id"
-                              :value="attrValue.id"
                             >
-                              {{ attrValue.attribute.name }}: {{ attrValue.value }}
+                            <option
+                                v-for="attrValue in allAttributeValues"
+                                :key="attrValue.id"
+                                :value="attrValue.id"
+                            >
+                                {{ attrValue.attributeName }}: {{ attrValue.value }}
                             </option>
-                          </select>
+                            </select>
+
+                          </div>
+
+                          <!-- Variation Images -->
+                          <div class="form-group">
+                            <images-dragger
+                              :index="idx"
+                              @getImages="handleVariationImages"
+                            />
+                            <div class="d-flex flex-wrap gap-2 mt-2">
+                              <img
+                                v-for="(img, i) in variation.images"
+                                :key="i"
+                                :src="previewImage(img)"
+                                alt="Variation image"
+                                class="rounded border"
+                                style="width: 70px; height: 70px; object-fit: cover;"
+                              />
+                            </div>
+                          </div>
                         </div>
 
-                        <div class="col-md-1 text-end">
+                        <div class="col-md-6 text-end">
                           <button
-                            class="btn btn-sm btn-danger mt-2"
+                            class="btn btn-sm btn-danger"
                             type="button"
                             @click="removeVariation(idx)"
                           >
@@ -202,6 +182,7 @@
                       </div>
                     </div>
                   </div>
+
                   <div v-else class="text-muted">No variations added yet.</div>
                 </div>
               </div>
@@ -223,25 +204,59 @@
         </div>
       </div>
     </div>
+
+    <!-- Delete Modal -->
+    <div
+      class="modal fade"
+      id="deleteModal"
+      tabindex="-1"
+      aria-labelledby="deleteModalLabel"
+      aria-hidden="true"
+      ref="deleteModalRef"
+    >
+      <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Delete Product</h5>
+            <button type="button" class="btn-close" @click="closeDeleteModal"></button>
+          </div>
+          <div class="modal-body">
+            <p>Are you sure you want to remove <strong>{{ selectedProduct?.name }}</strong>?</p>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" @click="closeDeleteModal">Cancel</button>
+            <button class="btn btn-danger" @click="handleRemove">Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </DefaultLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, nextTick } from 'vue'
+import { ref, reactive, computed, nextTick, onMounted } from 'vue'
+import { Modal } from 'bootstrap'
+import { useProductStore } from '@/store/product'
+import { useAttributeStore } from '@/store/attribute'
+import { useUtilsStore } from '@/store/utils'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import TableComponent from '@/components/TableComponent.vue'
-import { useProductStore } from '@/store/product'
-import { Modal } from 'bootstrap'
-// import { VueMultiImageUpload } from '@zakerxa/vue-multiple-image-upload'
+import ImagesDragger from '@/components/common/FormImagesDragger.vue'
 
+// Store imports
 const productStore = useProductStore()
-const productModalRef = ref(null)
-let modalInstance: Modal | null = null
-const isEdit = ref(false)
+const attributeStore = useAttributeStore()
+const utilsStore = useUtilsStore()
 
-const attributes = ref<any[]>([])
-const allAttributeValues = ref<any[]>([])
-const uploadedImages = ref<File[]>([])
+// Refs
+const productModalRef = ref(null)
+const deleteModalRef = ref(null)
+let modalInstance: Modal | null = null
+let deleteModalInstance: Modal | null = null
+
+const isEdit = ref(false)
+const selectedProduct = ref(null)
+const images = ref<File[]>([])
 
 const form = reactive({
   id: null,
@@ -250,39 +265,35 @@ const form = reactive({
   price: '',
   stock: '',
   sku: '',
-  selectedAttributes: {} as Record<number, number[]>,
   variations: [] as any[],
 })
 
 onMounted(async () => {
   await productStore.fetchProducts(1)
-  await fetchAttributes()
+  await attributeStore.fetchAttributes()
 })
-
-async function fetchAttributes() {
-  const res = await fetch('/api/product-attributes')
-  const data = await res.json()
-  attributes.value = data
-  allAttributeValues.value = data.flatMap((attr: any) =>
-    attr.values.map((v: any) => ({
-      ...v,
-      attribute: { id: attr.id, name: attr.name },
-    }))
-  )
-}
-
-function onImagesSelected(files: File[]) {
-  uploadedImages.value = files
-}
 
 const columns = computed(() => {
   const firstItem = productStore.products[0]
   if (!firstItem) return []
-  return Object.keys(firstItem).map(key => ({
+  const dynamicObj = Object.keys(firstItem).map(key => ({
     key,
     label: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
   }))
+  dynamicObj.push({ key: 'actions', label: 'Actions' })
+  return dynamicObj
 })
+
+const allAttributeValues = computed(() => {
+  return attributeStore.attributes.flatMap(attr =>
+    attr.values.map(value => ({
+      id: value.id,          // <-- use the value's id only
+      value: value.value,    // the actual string value
+      attributeName: attr.name
+    }))
+  )
+})
+
 
 function handlePageChange(page: number) {
   productStore.fetchProducts(page)
@@ -301,20 +312,20 @@ function openCreateModal() {
     price: '',
     stock: '',
     sku: '',
-    selectedAttributes: {},
     variations: [],
   })
-  uploadedImages.value = []
-  showModal()
+  images.value = []
+  showProductModal()
 }
 
 function openEditModal(product: any) {
   isEdit.value = true
   Object.assign(form, product)
-  showModal()
+  form.variations = product.variations || []
+  showProductModal()
 }
 
-function showModal() {
+function showProductModal() {
   nextTick(() => {
     if (!modalInstance && productModalRef.value) {
       modalInstance = new Modal(productModalRef.value)
@@ -328,11 +339,26 @@ function closeModal() {
 }
 
 function addVariation() {
-  form.variations.push({ price: '', stock: '', attribute_values: [] })
+  form.variations.push({ price: '', stock: '', attribute_values: '', images: [] })
 }
 
 function removeVariation(index: number) {
   form.variations.splice(index, 1)
+}
+
+// function handleMainImages({ index, files }) {
+//   images.value = [...images.value, ...files]  // Update the images array with new files
+// }
+
+// function handleVariationImages({ index, files }) {
+//   if (form.variations[index]) {
+//     form.variations[index].images = files
+//   }
+// }
+
+function previewImage(img: File | string) {
+  if (typeof img === 'string') return img
+  return URL.createObjectURL(img)
 }
 
 async function handleSubmit() {
@@ -343,22 +369,91 @@ async function handleSubmit() {
   formData.append('stock', form.stock)
   formData.append('sku', form.sku)
 
-  uploadedImages.value.forEach(file => formData.append('images[]', file))
+  //   images.value.forEach((img, i) => formData.append(`images[${i}]`, img))
 
-  formData.append('attributes', JSON.stringify(form.selectedAttributes))
-  formData.append('variations', JSON.stringify(form.variations))
+  // Append main images
+  images.value.forEach((url, i) => formData.append(`images[${i}]`, url))
 
-  if (isEdit.value) await productStore.updateProduct(formData)
-  else await productStore.createProduct(formData)
+
+
+  //   form.variations.forEach((variation, vIndex) => {
+//     variation.images?.forEach((img, i) => {
+//       formData.append(`variation_images[${vIndex}][]`, img)
+//     })
+//   })
+
+  // Append variations correctly
+  form.variations.forEach((variation, vIndex) => {
+    formData.append(`variations[${vIndex}][price]`, variation.price)
+    formData.append(`variations[${vIndex}][stock]`, variation.stock)
+    formData.append(`variations[${vIndex}][attribute_values]`, variation.attribute_values)
+
+    // Append variation images
+    variation.images?.forEach((url, i) => {
+      formData.append(`variation_images[${vIndex}][${i}]`, url)
+    })
+  })
+
+  if (isEdit.value) {
+    await productStore.updateProduct(form.id, formData)
+  } else {
+    await productStore.createProduct(formData)
+  }
 
   closeModal()
   productStore.fetchProducts(productStore.pagination?.current_page || 1)
 }
+
+function openDeleteModal(product: any) {
+  selectedProduct.value = product
+  nextTick(() => {
+    if (!deleteModalInstance && deleteModalRef.value) {
+      deleteModalInstance = new Modal(deleteModalRef.value)
+    }
+    deleteModalInstance?.show()
+  })
+}
+
+function closeDeleteModal() {
+  deleteModalInstance?.hide()
+}
+
+async function handleRemove() {
+  if (selectedProduct.value) {
+    await productStore.deleteProduct(selectedProduct.value.id)
+    closeDeleteModal()
+    productStore.fetchProducts(productStore.pagination?.current_page || 1)
+  }
+}
+
+async function handleMainImages({ files }) {
+  try {
+    const urls = await utilsStore.uploadMultiple(files)
+    images.value.push(...urls)
+  } catch (err) {
+    console.error('Upload error:', err)
+  }
+}
+
+async function handleVariationImages({ index, files }) {
+  try {
+    const uploadedUrls = await utilsStore.uploadMultiple(files)
+
+    if (!form.variations[index].images) {
+      form.variations[index].images = []
+    }
+
+    form.variations[index].images.push(...uploadedUrls)
+  } catch (err) {
+    console.error('Variation image upload failed:', err)
+  }
+}
 </script>
 
-<style scoped>
-.modal-body {
-  max-height: 80vh;
-  overflow-y: auto;
+<style>
+.uploader-box {
+  border-style: dashed;
+  background-color: transparent;
+  border-color: #d8e2ef;
 }
 </style>

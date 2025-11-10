@@ -126,22 +126,16 @@ interface NavItem {
 }
 
 const productItems: NavItem[] = [
-  { name: 'Product List', path: '/ecommerce/product-list' },
-  { name: 'Product Grid', path: '/ecommerce/product-grid' },
-  { name: 'Product Details', path: '/ecommerce/product-details' },
-  { name: 'Add Product', path: '/ecommerce/add-product' },
+  { name: 'Product List', path: 'product' },
+  { name: 'Product Attribute', path: 'product-attribute' }
 ]
 
 const orderItems: NavItem[] = [
-  { name: 'Order List', path: '/ecommerce/order-list' },
-  { name: 'Order Details', path: '/ecommerce/order-details' },
+  { name: 'Order List', path: '/ecommerce/order-list' }
 ]
 
 const ecommerceItems: NavItem[] = [
   { name: 'Customers', path: '/ecommerce/customers' },
-  { name: 'Customer Details', path: '/ecommerce/customer-details' },
-  { name: 'Shopping Cart', path: '/ecommerce/shopping-cart' },
-  { name: 'Checkout', path: '/ecommerce/checkout' },
   { name: 'Billing', path: '/ecommerce/billing' },
   { name: 'Invoice', path: '/ecommerce/invoice' },
 ]

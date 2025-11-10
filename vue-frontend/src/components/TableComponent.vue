@@ -16,14 +16,14 @@
 
       <!-- Right: Bulk & Create -->
       <div class="d-flex align-items-center">
-        <div class="me-2">
+        <!-- <div class="me-2">
           <select class="form-select form-select-sm" v-model="bulkAction">
             <option value="">Bulk actions</option>
             <option value="Delete">Delete</option>
             <option value="Archive">Archive</option>
           </select>
         </div>
-        <button class="btn btn-sm btn-danger me-2" @click="emitBulk">Apply</button>
+        <button class="btn btn-sm btn-danger me-2" @click="emitBulk">Apply</button> -->
 
         <button class="btn btn-sm btn-success" @click="$emit('create')">
           <span class="fas fa-plus me-1"></span> New
@@ -57,7 +57,19 @@
 
           <!-- Data rows -->
           <tr v-else v-for="(row, index) in displayData" :key="index">
-            <td v-for="col in columns" :key="col.key">{{ row[col.key] }}</td>
+            <td v-for="col in columns" :key="col.key" :style="{width: (col.key === 'actions') ? '10%' : 'auto'}">
+              <template v-if="col.key === 'actions'">
+                <button class="btn btn-sm btn-transparent text-warning" @click="emit('edit', row)">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn btn-sm btn-transparent text-danger" @click="emit('remove', row)">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </template>
+              <template v-else>
+                {{ row[col.key] }}
+              </template>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -121,7 +133,7 @@ interface Props {
 }
 
 const props = defineProps<Props>()
-const emit = defineEmits(['create', 'bulk', 'page-change', 'search'])
+const emit = defineEmits(['create', 'bulk', 'page-change', 'search', 'edit', 'remove'])
 
 const bulkAction = ref('')
 const searchQuery = ref('')

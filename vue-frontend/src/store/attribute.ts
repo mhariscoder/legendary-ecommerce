@@ -40,7 +40,7 @@ export const useAttributeStore = defineStore('attribute', {
       this.loading = true
       this.error = null
       try {
-        const res = await axios.get(`/attributes?page=${page}`)
+        const res = await axios.get(`/product-attributes?page=${page}`)
         const data = res.data.data || res.data
 
         this.attributes = data.data || data
@@ -63,7 +63,7 @@ export const useAttributeStore = defineStore('attribute', {
     async fetchAttribute(id: number) {
       this.loading = true
       try {
-        const res = await axios.get(`/attributes/${id}`)
+        const res = await axios.get(`/product-attributes/${id}`)
         this.attribute = res.data.data || res.data
       } catch (error: any) {
         this.error = error.response?.data?.message || 'Failed to load attribute'
@@ -78,7 +78,7 @@ export const useAttributeStore = defineStore('attribute', {
     async createAttribute(payload: Omit<Attribute, 'id'>) {
       this.loading = true
       try {
-        const res = await axios.post('/attributes', payload)
+        const res = await axios.post('/product-attributes', payload)
         await this.fetchAttributes()
         return res.data
       } catch (error: any) {
@@ -95,7 +95,7 @@ export const useAttributeStore = defineStore('attribute', {
     async updateAttribute(id: number, payload: Partial<Attribute>) {
       this.loading = true
       try {
-        const res = await axios.put(`/attributes/${id}`, payload)
+        const res = await axios.put(`/product-attributes/${id}`, payload)
         await this.fetchAttributes(this.pagination?.current_page || 1)
         return res.data
       } catch (error: any) {
@@ -112,7 +112,7 @@ export const useAttributeStore = defineStore('attribute', {
     async deleteAttribute(id: number) {
       this.loading = true
       try {
-        await axios.delete(`/attributes/${id}`)
+        await axios.delete(`/product-attributes/${id}`)
         await this.fetchAttributes(this.pagination?.current_page || 1)
       } catch (error: any) {
         this.error = error.response?.data?.message || 'Failed to delete attribute'

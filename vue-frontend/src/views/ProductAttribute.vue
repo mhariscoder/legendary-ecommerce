@@ -1,3 +1,139 @@
+<script setup lang="ts">
+import { ref, reactive, computed, onMounted, nextTick } from 'vue'
+import { Modal } from 'bootstrap'
+import DefaultLayout from '@/layouts/DefaultLayout.vue'
+import TableComponent from '@/components/TableComponent.vue'
+import { useAttributeStore } from '@/store/attribute'
+
+const attributeStore = useAttributeStore()
+
+interface Column {
+  key: string;
+  label: string;
+  render?: (row: any) => string;
+}
+
+const attributes = computed(() => attributeStore.attributes)
+const loading = computed(() => attributeStore.loading)
+const isEdit = ref(false)
+const attributeModalRef = ref<HTMLElement | null>(null)
+const deleteModalRef = ref<HTMLElement | null>(null)
+let modalInstance: Modal | null = null
+let deleteModalInstance: Modal | null = null
+const selectedAttribute = ref(null)
+
+const form = reactive({
+  id: null as number | null,
+  name: '',
+  values: [] as string[],
+})
+
+onMounted(async () => {
+  await attributeStore.fetchAttributes()
+
+  nextTick(() => {
+    if (attributeModalRef.value) {
+      modalInstance = new Modal(attributeModalRef.value)
+    }
+    if (deleteModalRef.value) {
+      deleteModalInstance = new Modal(deleteModalRef.value)
+    }
+  })
+})
+
+const columns = computed(() => [
+  { key: 'id', label: 'ID' },
+  { key: 'name', label: 'Name' },
+  { key: 'actions', label: 'Actions'}
+])
+
+function openCreateModal() {
+  isEdit.value = false
+  Object.assign(form, { id: null, name: '', values: [] })
+  showModal()
+}
+
+function openEditModal(attribute: any) {
+  isEdit.value = true
+  Object.assign(form, {
+    id: attribute.id,
+    name: attribute.name,
+    values: attribute.values.map((value: any) => value.value)
+  })
+  showModal()
+}
+
+function openDeleteModal(attribute: any) {
+  selectedAttribute.value = attribute
+  if (deleteModalInstance) {
+    deleteModalInstance.show()
+  }
+}
+
+function showModal() {
+  if (modalInstance && !modalInstance._isShown) {
+    modalInstance.show()
+  }
+}
+
+function closeModal() {
+  if (modalInstance) {
+    modalInstance.hide()
+  }
+}
+
+function closeDeleteModal() {
+  if (deleteModalInstance) {
+    deleteModalInstance.hide()
+  }
+  selectedAttribute.value = null
+}
+
+function addValue() {
+  form.values.push('')
+}
+
+function removeValue(index: number) {
+  form.values.splice(index, 1)
+}
+
+async function handleSubmit() {
+  const payload = { name: form.name, values: form.values }
+
+  try {
+    if (isEdit.value && form.id) {
+      await attributeStore.updateAttribute(form.id, payload)
+    } else {
+      await attributeStore.createAttribute(payload)
+    }
+
+    closeModal()
+  } catch (err) {
+    console.error('❌ Failed to save attribute:', err)
+  }
+}
+
+async function handleRemove() {
+  if (!selectedAttribute.value) return
+
+  try {
+    await attributeStore.deleteAttribute(selectedAttribute.value.id)
+
+    closeDeleteModal()
+
+    await attributeStore.fetchAttributes()
+  } catch (err) {
+    console.error('❌ Failed to remove attribute:', err)
+  }
+}
+
+function applyBulkAction() {}
+
+function applySearch() {}
+
+function goToPage() {}
+</script>
+
 <template>
   <DefaultLayout>
     <div class="d-flex">
@@ -7,18 +143,20 @@
         <div class="card">
           <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Attribute List</h5>
-            <button class="btn btn-primary btn-sm" @click="openCreateModal">
-              <i class="fas fa-plus me-1"></i> Add Attribute
-            </button>
           </div>
 
-          <div class="card-body p-0">
+          <div class="card-body py-0 border-top">
             <TableComponent
               v-if="attributes.length"
               :columns="columns"
               :data="attributes"
               :loading="loading"
-              @row-click="openEditModal"
+              @create="openCreateModal"
+              @edit="openEditModal"
+              @remove="openDeleteModal"
+              @bulk="applyBulkAction"
+              @search="applySearch"
+              @page-change="goToPage"
             />
 
             <div v-else-if="loading" class="text-center py-5 text-muted">
@@ -34,7 +172,7 @@
       </div>
     </div>
 
-    <!-- ✅ Modal -->
+    <!-- ✅ Create / Update Modal -->
     <div
       class="modal fade"
       id="attributeModal"
@@ -79,7 +217,7 @@
                     class="d-flex align-items-center mb-2"
                   >
                     <input
-                      v-model="value.value"
+                      v-model="form.values[idx]"
                       type="text"
                       class="form-control me-2"
                       placeholder="Enter value (e.g., Red, Large)"
@@ -114,92 +252,36 @@
         </div>
       </div>
     </div>
+
+    <!-- ✅ Remove Modal -->
+    <div
+      class="modal fade"
+      id="deleteModal"
+      tabindex="-1"
+      aria-labelledby="deleteModalLabel"
+      aria-hidden="true"
+      ref="deleteModalRef"
+    >
+      <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="deleteModalLabel">Delete Attribute</h5>
+            <button type="button" class="btn-close" @click="closeDeleteModal"></button>
+          </div>
+
+          <div class="modal-body">
+            <p>Are you sure you want to remove this attribute: <strong>{{ selectedAttribute?.name }}</strong>?</p>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" @click="closeDeleteModal">Cancel</button>
+            <button type="button" class="btn btn-danger" @click="handleRemove">Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </DefaultLayout>
 </template>
-
-<script setup lang="ts">
-import { ref, reactive, computed, onMounted, nextTick } from 'vue'
-import { Modal } from 'bootstrap'
-import DefaultLayout from '@/layouts/DefaultLayout.vue'
-import TableComponent from '@/components/TableComponent.vue'
-import { useAttributeStore } from '@/store/attribute'
-
-const attributeStore = useAttributeStore()
-
-const attributes = computed(() => attributeStore.attributes)
-const loading = computed(() => attributeStore.loading)
-const isEdit = ref(false)
-const attributeModalRef = ref<HTMLElement | null>(null)
-let modalInstance: Modal | null = null
-
-const form = reactive({
-  id: null as number | null,
-  name: '',
-  values: [] as { id?: number; value: string }[],
-})
-
-onMounted(async () => {
-  await attributeStore.fetchAttributes()
-})
-
-const columns = computed(() => [
-  { key: 'id', label: 'ID' },
-  { key: 'name', label: 'Name' },
-])
-
-function openCreateModal() {
-  isEdit.value = false
-  Object.assign(form, { id: null, name: '', values: [] })
-  showModal()
-}
-
-function openEditModal(attribute: any) {
-  isEdit.value = true
-  Object.assign(form, {
-    id: attribute.id,
-    name: attribute.name,
-    values: attribute.values || [],
-  })
-  showModal()
-}
-
-function showModal() {
-  nextTick(() => {
-    if (!modalInstance && attributeModalRef.value) {
-      modalInstance = new Modal(attributeModalRef.value)
-    }
-    modalInstance?.show()
-  })
-}
-
-function closeModal() {
-  modalInstance?.hide()
-}
-
-function addValue() {
-  form.values.push({ value: '' })
-}
-
-function removeValue(index: number) {
-  form.values.splice(index, 1)
-}
-
-async function handleSubmit() {
-  const payload = { name: form.name, values: form.values }
-
-  try {
-    if (isEdit.value && form.id) {
-      await attributeStore.updateAttribute(form.id, payload)
-    } else {
-      await attributeStore.createAttribute(payload)
-    }
-
-    closeModal()
-  } catch (err) {
-    console.error('❌ Failed to save attribute:', err)
-  }
-}
-</script>
 
 <style scoped>
 .modal-body {
